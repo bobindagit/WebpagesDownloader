@@ -5,6 +5,7 @@ services:
   app:
     build: .
     volumes:
+      - ./:/app
       - ./pdf:/app/pdf
     ports:
       - "5000:5000"

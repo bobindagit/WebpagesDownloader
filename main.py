@@ -1,14 +1,17 @@
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-import pdfkit
+import weasyprint
+import requests
+from bs4 import BeautifulSoup
+
 import os
 import logging
 
 
-logger = logging.getLogger('PDF_DOWNLOADER')
+logger = logging.getLogger('weasyprint')
+logger.addHandler(logging.FileHandler('logs/weasyprint.log'))
 
 # Creating folder for PDF files
 if not os.path.exists('pdf'):
@@ -23,9 +26,18 @@ class PDFDownloader(BaseModel):
 
 
 @app.post('/download_pdf')
-async def download_pdf(url: str):
+def download_pdf(url: str):
     try:
-        pdfkit.from_url(url, f'pdf/{get_filename(url)}.pdf')
+        response = requests.get(url)
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.content, 'lxml')
+            # Removing pagebreak
+            pagebreaks = soup.find_all(attrs={"class": "pagebreak"})
+            for pagebreak in pagebreaks:
+                pagebreak.replace_with('')
+            weasyprint.HTML(string=soup.prettify()).write_pdf(f'pdf/{get_filename(url)}.pdf', stylesheets=[weasyprint.CSS('style.css')])
+        else:
+            return 500
         return 200
     except Exception as exp:
         logger.error(exp)

@@ -8,7 +8,6 @@ ENV PYTHONPATH=.
 WORKDIR /app
 
 RUN apt-get update
-RUN apt-get install wkhtmltopdf -y
 
 COPY requirements.txt .
 RUN pip install --upgrade pip
